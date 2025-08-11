@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mora Shortlink - Firebase Dynamic Links Alternative</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .copy-btn {
+            background: #28a745;
+            margin-left: 10px;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+        }
+        
+        .advanced-options {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .toggle-advanced {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 14px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Mora Shortlink</h1>
+            <p>Firebase Dynamic Links Alternative for link.morafinance.com</p>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-item">
+                <div class="stat-number" id="totalLinks">-</div>
+                <div class="stat-label">Total Links</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="totalClicks">-</div>
+                <div class="stat-label">Total Clicks</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="uniqueVisitors">-</div>
+                <div class="stat-label">Unique Visitors</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Create Short Link</h2>
+            <form id="createLinkForm">
+                <div class="form-group">
+                    <label for="originalUrl">Original URL *</label>
+                    <input type="url" id="originalUrl" name="originalUrl" required placeholder="https://example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="customAlias">Custom Alias (optional)</label>
+                    <input type="text" id="customAlias" name="customAlias" placeholder="my-custom-link">
+                </div>
+                
+                <button type="button" class="toggle-advanced" onclick="toggleAdvanced()">
+                    Show Advanced Options
+                </button>
+                
+                <div id="advancedOptions" class="advanced-options">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" name="title" placeholder="Page title for social media">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" placeholder="Description for social media preview"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="imageUrl">Image URL</label>
+                        <input type="url" id="imageUrl" name="imageUrl" placeholder="https://example.com/image.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="iosUrl">iOS App URL</label>
+                        <input type="text" id="iosUrl" name="iosUrl" placeholder="myapp://page">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="androidUrl">Android App URL</label>
+                        <input type="text" id="androidUrl" name="androidUrl" placeholder="myapp://page">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="desktopUrl">Desktop Fallback URL</label>
+                        <input type="url" id="desktopUrl" name="desktopUrl" placeholder="https://example.com/desktop">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn">Create Short Link</button>
+            </form>
+            
+            <div class="loading" id="loading">Creating your link...</div>
+            
+            <div id="result" class="result">
+                <h3>Link Created Successfully!</h3>
+                <p><strong>Short URL:</strong> <span id="shortUrl"></span> 
+                   <button class="btn copy-btn" onclick="copyToClipboard()">Copy</button>
+                </p>
+                <p><strong>Alias:</strong> <span id="alias"></span></p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Links</h2>
+            <div id="recentLinks">Loading...</div>
+        </div>
+    </div>
+    
+    <script>
+        let currentShortUrl = '';
+        
+        // Load initial stats and recent links
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+            loadRecentLinks();
+        });
+        
+        // Create link form handler
+        document.getElementById('createLinkForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Remove empty values
+            Object.keys(data).forEach(key => {
+                if (!data[key]) delete data[key];
+            });
+            
+            // Rename originalUrl to url for API
+            data.url = data.originalUrl;
+            delete data.originalUrl;
+            
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const responseData = await response.json();
+                
+                if (response.ok) {
+                    currentShortUrl = responseData.shortUrl;
+                    document.getElementById('shortUrl').textContent = currentShortUrl;
+                    document.getElementById('alias').textContent = responseData.alias;
+                    result.className = 'result success';
+                    result.style.display = 'block';
+                    
+                    // Refresh stats and recent links
+                    loadStats();
+                    loadRecentLinks();
+                    
+                    // Reset form
+                    e.target.reset();
+                } else {
+                    throw new Error(responseData.error || 'Failed to create link');
+                }
+            } catch (error) {
+                result.innerHTML = `<p><strong>Error:</strong> ${error.message}</p>`;
+                result.className = 'result error';
+                result.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function toggleAdvanced() {
+            const options = document.getElementById('advancedOptions');
+            const button = document.querySelector('.toggle-advanced');
+            
+            if (options.style.display === 'none' || !options.style.display) {
+                options.style.display = 'block';
+                button.textContent = 'Hide Advanced Options';
+            } else {
+                options.style.display = 'none';
+                button.textContent = 'Show Advanced Options';
+            }
+        }
+        
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/analytics');
+                const data = await response.json();
+                
+                document.getElementById('totalLinks').textContent = data.totalLinks || 0;
+                document.getElementById('totalClicks').textContent = data.totalClicks || 0;
+                document.getElementById('uniqueVisitors').textContent = data.uniqueVisitors || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        async function loadRecentLinks() {
+            try {
+                const response = await fetch('/api/links');
+                const links = await response.json();
+                
+                const container = document.getElementById('recentLinks');
+                
+                if (links.length === 0) {
+                    container.innerHTML = '<p>No links created yet.</p>';
+                    return;
+                }
+                
+                const html = links.slice(0, 10).map(link => `
+                    <div style="padding: 15px; border-bottom: 1px solid #eee;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>link.morafinance.com/${link.alias}</strong>
+                                <br>
+                                <small style="color: #666;">${link.originalUrl}</small>
+                                <br>
+                                <small style="color: #999;">Created: ${new Date(link.createdAt).toLocaleDateString()}</small>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.2em; color: #667eea; font-weight: bold;">
+                                    ${link.clickCount || 0}
+                                </div>
+                                <small style="color: #666;">clicks</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent links:', error);
+                document.getElementById('recentLinks').innerHTML = '<p>Error loading links.</p>';
+            }
+        }
+        
+        function copyToClipboard() {
+            navigator.clipboard.writeText(currentShortUrl).then(function() {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
