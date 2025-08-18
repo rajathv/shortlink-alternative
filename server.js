@@ -303,14 +303,18 @@ app.get('/:alias', async (req, res) => {
 
     // Platform-specific routing
     if (deviceInfo.isIOS && link.iosUrl) {
-      // Smart iOS redirect: try app first, fallback to App Store
-      if (link.iosUrl.startsWith('morafinance://') || link.iosUrl.startsWith('https://link.staging.morafinance.com/')) {
-        // Use smart redirect page for custom schemes or universal links
-        const deepLink = link.iosUrl.startsWith('morafinance://') ? link.iosUrl : `morafinance://shortlink/${alias}`;
+      // Check if iOS URL is the same as the current shortlink (avoid circular redirect)
+      const currentShortUrl = `https://link.staging.morafinance.com/${alias}`;
+
+      if (link.iosUrl === currentShortUrl) {
+        // Universal Link case: let iOS handle it naturally (no redirect needed)
+        redirectUrl = link.originalUrl;
+      } else if (link.iosUrl.startsWith('morafinance://')) {
+        // Custom scheme: use smart redirect page
         const fallbackUrl = 'https://apps.apple.com/us/app/mora-finance/id6444378741';
-        return res.redirect(`/ios-redirect.html?deeplink=${encodeURIComponent(deepLink)}&fallback=${encodeURIComponent(fallbackUrl)}`);
+        return res.redirect(`/ios-redirect.html?deeplink=${encodeURIComponent(link.iosUrl)}&fallback=${encodeURIComponent(fallbackUrl)}`);
       } else {
-        // Direct redirect for other URLs (like App Store links)
+        // Other URLs (App Store, different domains): direct redirect
         redirectUrl = link.iosUrl;
       }
     } else if (deviceInfo.isAndroid && link.androidUrl) {
