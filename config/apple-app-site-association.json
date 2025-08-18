@@ -1,11 +1,13 @@
 {
   "applinks": {
+    "apps": [],
     "details": [
       {
-        "appIDs": ["B773LGT82N.com.moraapp.morainternal"],
+        "appIDs": ["TEAMID.com.morafinance.app"],
+        "paths": ["*"],
         "components": [
           {
-            "/": "/",
+            "/": "*",
             "comment": "Matches all shortlinks for Universal Links"
           }
         ]

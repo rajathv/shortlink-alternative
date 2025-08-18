@@ -6,12 +6,14 @@ class AASAConfig {
     this.configPath = path.join(__dirname, '..', 'config', 'apple-app-site-association.json');
     this.defaultConfig = {
       applinks: {
+        apps: [],
         details: [
           {
             appIDs: ["TEAMID.com.morafinance.app"],
+            paths: ["*"],
             components: [
               {
-                "/": "/",
+                "/": "*",
                 comment: "Matches all shortlinks for Universal Links"
               }
             ]
