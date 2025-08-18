@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.morafinance.app"],
+        "components": [
+          {
+            "/": "/",
+            "comment": "Matches all shortlinks for Universal Links"
+          }
+        ]
+      }
+    ]
+  }
+}

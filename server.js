@@ -7,6 +7,7 @@ const Database = require('./database');
 const LinkService = require('./services/linkService');
 const AnalyticsService = require('./services/analyticsService');
 const { detectDevice, generateMetaTags } = require('./utils/helpers');
+const AASAConfig = require('./utils/aasaConfig');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 const db = new Database();
 const linkService = new LinkService(db);
 const analyticsService = new AnalyticsService(db);
+const aasaConfig = new AASAConfig();
 
 // Middleware
 app.use(helmet());
@@ -225,6 +227,24 @@ app.get('/api/top-links', async (req, res) => {
   }
 });
 
+// Apple App Site Association endpoint for iOS Universal Links
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  try {
+    const aasaData = aasaConfig.loadConfig();
+    
+    // Set proper headers for AASA file
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    
+    res.json(aasaData);
+  } catch (error) {
+    console.error('Error serving AASA file:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
@@ -240,6 +260,16 @@ async function start() {
   try {
     await db.initialize();
     console.log('Database initialized successfully');
+    
+    // Initialize and validate AASA configuration
+    console.log('Initializing AASA configuration...');
+    const aasaData = aasaConfig.loadConfig();
+    if (aasaData) {
+      console.log('AASA configuration loaded and validated successfully');
+      console.log(`AASA file available at: https://link.staging.morafinance.com/.well-known/apple-app-site-association`);
+    } else {
+      console.warn('AASA configuration validation failed, using default configuration');
+    }
     
     app.listen(PORT, () => {
       console.log(`Mora Shortlink server running on port ${PORT}`);
