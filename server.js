@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
+const fs = require('fs');
 const Database = require('./database');
 const LinkService = require('./services/linkService');
 const AnalyticsService = require('./services/analyticsService');
@@ -258,6 +259,13 @@ app.get('/', (req, res) => {
 // Initialize database and start server
 async function start() {
   try {
+    // Ensure data directory exists
+    const dataDir = path.dirname(process.env.DB_PATH || './data/mora_shortlink.db');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log(`Created data directory: ${dataDir}`);
+    }
+    
     await db.initialize();
     console.log('Database initialized successfully');
     

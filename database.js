@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 class Database {
-  constructor(dbPath = './mora_shortlink.db') {
+  constructor(dbPath = process.env.DB_PATH || './data/mora_shortlink.db') {
     this.dbPath = dbPath;
     this.db = null;
   }
