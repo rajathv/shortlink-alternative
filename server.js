@@ -62,6 +62,11 @@ app.post('/api/create', async (req, res) => {
   }
 });
 
+// iOS redirect page for smart app opening (must be before /:alias route)
+app.get('/ios-redirect.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'ios-redirect.html'));
+});
+
 // Link redirect handler
 app.get('/:alias', async (req, res) => {
   try {
@@ -254,6 +259,8 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 // Health check
 app.get('/health', (req, res) => {
