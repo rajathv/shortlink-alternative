@@ -25,7 +25,6 @@ app.use(cors());
 app.use(morgan('combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 // API Routes
 app.post('/api/create', async (req, res) => {
@@ -64,7 +63,161 @@ app.post('/api/create', async (req, res) => {
 
 // iOS redirect page for smart app opening (must be before /:alias route)
 app.get('/ios-redirect.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'ios-redirect.html'));
+  const { deeplink, fallback } = req.query;
+  
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Mora Finance App...</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 16px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fallback {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">MF</div>
+        <h1>Opening Mora Finance App...</h1>
+        <p>If the app doesn't open automatically, you can download it from the App Store.</p>
+        <div class="spinner"></div>
+        
+        <div class="fallback" id="fallback">
+            <p>App not installed?</p>
+            <a href="${fallback || 'https://apps.apple.com/us/app/mora-finance/id6444378741'}" class="btn">
+                Download from App Store
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const deepLink = '${deeplink || 'morafinance://'}';
+        const fallbackUrl = '${fallback || 'https://apps.apple.com/us/app/mora-finance/id6444378741'}';
+        
+        // Try to open the app
+        function attemptAppOpen() {
+            // Create invisible iframe to trigger app opening
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+            
+            // Remove iframe after attempt
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 1000);
+        }
+        
+        // Show fallback after delay
+        function showFallback() {
+            setTimeout(() => {
+                document.getElementById('fallback').style.display = 'block';
+                document.querySelector('.spinner').style.display = 'none';
+            }, 3000);
+        }
+        
+        // Detect if user left the page (app opened)
+        let hidden = false;
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                hidden = true;
+            }
+        });
+        
+        window.addEventListener('blur', () => {
+            hidden = true;
+        });
+        
+        // Start the process
+        attemptAppOpen();
+        showFallback();
+        
+        // If user comes back after 5 seconds, assume app didn't open
+        setTimeout(() => {
+            if (!hidden) {
+                window.location.href = fallbackUrl;
+            }
+        }, 5000);
+    </script>
+</body>
+</html>`;
+
+  res.send(html);
 });
 
 // Link redirect handler
@@ -266,6 +419,9 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
+
+// Static file serving (after specific routes to avoid conflicts)
+app.use(express.static('public'));
 
 // Root endpoint - serve dashboard
 app.get('/', (req, res) => {
