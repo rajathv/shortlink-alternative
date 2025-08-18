@@ -301,20 +301,17 @@ app.get('/:alias', async (req, res) => {
     const deviceInfo = detectDevice(userAgent);
     let redirectUrl = link.originalUrl;
 
-    // Platform-specific routing
+    // Platform-specific routing - SIMPLIFIED FOR UNIVERSAL LINKS
     if (deviceInfo.isIOS && link.iosUrl) {
-      // Check if iOS URL is the same as the current shortlink (avoid circular redirect)
-      const currentShortUrl = `https://link.staging.morafinance.com/${alias}`;
+      console.log(`iOS redirect - iOS URL: "${link.iosUrl}"`);
 
-      if (link.iosUrl === currentShortUrl) {
-        // Universal Link case: let iOS handle it naturally (no redirect needed)
+      // For Universal Links, always redirect to original URL to let iOS handle it
+      if (link.iosUrl.startsWith('https://link.staging.morafinance.com/')) {
+        console.log('Universal Link - redirecting to original URL');
         redirectUrl = link.originalUrl;
-      } else if (link.iosUrl.startsWith('morafinance://')) {
-        // Custom scheme: use smart redirect page
-        const fallbackUrl = 'https://apps.apple.com/us/app/mora-finance/id6444378741';
-        return res.redirect(`/ios-redirect.html?deeplink=${encodeURIComponent(link.iosUrl)}&fallback=${encodeURIComponent(fallbackUrl)}`);
       } else {
-        // Other URLs (App Store, different domains): direct redirect
+        // Direct redirect for other URLs
+        console.log('Direct iOS redirect');
         redirectUrl = link.iosUrl;
       }
     } else if (deviceInfo.isAndroid && link.androidUrl) {
