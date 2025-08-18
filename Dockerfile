@@ -4,6 +4,15 @@ FROM node:18-alpine
 # Set the working directory inside the container
 WORKDIR /app
 
+# Install Python and build dependencies for native modules FIRST
+# Install py3-setuptools to provide distutils for Python 3.12+
+RUN apk add --no-cache \
+    python3 \
+    py3-setuptools \
+    make \
+    g++ \
+    && ln -sf python3 /usr/bin/python
+
 # Create a non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
@@ -13,6 +22,9 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production && npm cache clean --force
+
+# Remove build dependencies to reduce image size
+RUN apk del make g++
 
 # Copy the rest of the application code
 COPY . .

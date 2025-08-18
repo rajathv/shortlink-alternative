@@ -178,9 +178,9 @@ show_status() {
     echo ""
     echo "Service URLs:"
     echo "============="
-    echo "🌐 Application: https://link.morafinance.com"
-    echo "📊 Health Check: https://link.morafinance.com/health"
-    echo "🔧 API: https://link.morafinance.com/api"
+    echo "🌐 Application: https://link.staging.morafinance.com"
+    echo "📊 Health Check: https://link.staging.morafinance.com/health"
+    echo "🔧 API: https://link.staging.morafinance.com/api"
     
     echo ""
     echo "Useful Commands:"

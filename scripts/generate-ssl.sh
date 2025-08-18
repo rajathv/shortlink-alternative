@@ -10,7 +10,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 SSL_DIR="./nginx/ssl"
-DOMAIN="link.morafinance.com"
+DOMAIN="link.staging.morafinance.com"
 
 echo -e "${BLUE}🔒 SSL Certificate Generator for Mora Shortlink${NC}"
 echo "================================================"

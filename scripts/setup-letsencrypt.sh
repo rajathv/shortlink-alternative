@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-DOMAIN="link.morafinance.com"
+DOMAIN="link.staging.morafinance.com"
 EMAIL="admin@morafinance.com"
 SSL_DIR="./nginx/ssl"
 WEBROOT_DIR="./nginx/webroot"
@@ -81,7 +81,7 @@ cat > "./scripts/renew-ssl.sh" << 'EOF'
 
 set -e
 
-DOMAIN="link.morafinance.com"
+DOMAIN="link.staging.morafinance.com"
 SSL_DIR="./nginx/ssl"
 
 echo "Checking certificate renewal..."

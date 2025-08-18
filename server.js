@@ -45,7 +45,7 @@ app.post('/api/create', async (req, res) => {
     };
 
     const result = await linkService.createLink(linkData);
-    const shortUrl = `https://link.morafinance.com/${result.alias}`;
+    const shortUrl = `https://link.staging.morafinance.com/${result.alias}`;
 
     res.json({
       shortUrl,
@@ -103,7 +103,7 @@ app.get('/:alias', async (req, res) => {
         title: link.title || 'Mora Finance',
         description: link.description || '',
         imageUrl: link.imageUrl || '',
-        url: `https://link.morafinance.com/${alias}`
+        url: `https://link.staging.morafinance.com/${alias}`
       });
 
       const html = `
@@ -244,7 +244,7 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`Mora Shortlink server running on port ${PORT}`);
       console.log(`API available at: http://localhost:${PORT}/api`);
-      console.log(`Short links: https://link.morafinance.com/`);
+      console.log(`Short links: https://link.staging.morafinance.com/`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
