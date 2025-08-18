@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 app.post('/api/create', async (req, res) => {
   try {
     const { url, customAlias, title, description, imageUrl, iosUrl, androidUrl, desktopUrl } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
@@ -64,7 +64,7 @@ app.post('/api/create', async (req, res) => {
 // iOS redirect page for smart app opening (must be before /:alias route)
 app.get('/ios-redirect.html', (req, res) => {
   const { deeplink, fallback } = req.query;
-  
+
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -168,17 +168,47 @@ app.get('/ios-redirect.html', (req, res) => {
         const deepLink = '${deeplink || 'morafinance://'}';
         const fallbackUrl = '${fallback || 'https://apps.apple.com/us/app/mora-finance/id6444378741'}';
         
-        // Try to open the app
+        console.log('Attempting to open app with:', deepLink);
+        
+        // Multiple methods to try opening the app
         function attemptAppOpen() {
-            // Create invisible iframe to trigger app opening
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = deepLink;
-            document.body.appendChild(iframe);
+            // Method 1: Direct window.location (most reliable on iOS)
+            try {
+                window.location.href = deepLink;
+            } catch (e) {
+                console.log('Method 1 failed:', e);
+            }
             
-            // Remove iframe after attempt
+            // Method 2: Create invisible iframe as backup
             setTimeout(() => {
-                document.body.removeChild(iframe);
+                try {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = deepLink;
+                    document.body.appendChild(iframe);
+                    
+                    setTimeout(() => {
+                        if (document.body.contains(iframe)) {
+                            document.body.removeChild(iframe);
+                        }
+                    }, 1000);
+                } catch (e) {
+                    console.log('Method 2 failed:', e);
+                }
+            }, 500);
+            
+            // Method 3: Create a temporary link and click it
+            setTimeout(() => {
+                try {
+                    const link = document.createElement('a');
+                    link.href = deepLink;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } catch (e) {
+                    console.log('Method 3 failed:', e);
+                }
             }, 1000);
         }
         
@@ -187,32 +217,57 @@ app.get('/ios-redirect.html', (req, res) => {
             setTimeout(() => {
                 document.getElementById('fallback').style.display = 'block';
                 document.querySelector('.spinner').style.display = 'none';
-            }, 3000);
+                console.log('Showing fallback options');
+            }, 2000); // Reduced from 3000 to 2000ms
         }
         
-        // Detect if user left the page (app opened)
-        let hidden = false;
+        // Detect if user left the page (app opened successfully)
+        let appOpened = false;
+        let startTime = Date.now();
         
+        // Multiple event listeners to detect app opening
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                hidden = true;
+                appOpened = true;
+                console.log('App likely opened (visibilitychange)');
             }
         });
         
         window.addEventListener('blur', () => {
-            hidden = true;
+            appOpened = true;
+            console.log('App likely opened (blur)');
         });
         
-        // Start the process
+        window.addEventListener('pagehide', () => {
+            appOpened = true;
+            console.log('App likely opened (pagehide)');
+        });
+        
+        // Start the process immediately
         attemptAppOpen();
         showFallback();
         
-        // If user comes back after 5 seconds, assume app didn't open
+        // Fallback to App Store if app didn't open
         setTimeout(() => {
-            if (!hidden) {
+            if (!appOpened) {
+                console.log('App did not open, redirecting to App Store');
                 window.location.href = fallbackUrl;
+            } else {
+                console.log('App opened successfully');
             }
-        }, 5000);
+        }, 4000); // Reduced from 5000 to 4000ms
+        
+        // Add manual fallback button functionality
+        setTimeout(() => {
+            const fallbackBtn = document.querySelector('.btn');
+            if (fallbackBtn) {
+                fallbackBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    console.log('Manual fallback clicked');
+                    window.location.href = fallbackUrl;
+                });
+            }
+        }, 100);
     </script>
 </body>
 </html>`;
@@ -234,7 +289,7 @@ app.get('/:alias', async (req, res) => {
     const userAgent = req.get('User-Agent');
     const ip = req.ip || req.connection.remoteAddress;
     const referer = req.get('Referer');
-    
+
     await analyticsService.trackClick(alias, {
       userAgent,
       ip,
@@ -266,7 +321,7 @@ app.get('/:alias', async (req, res) => {
 
     // Check if this is a social media crawler
     const isCrawler = /bot|crawler|spider|facebook|twitter|linkedin|whatsapp/i.test(userAgent);
-    
+
     if (isCrawler) {
       // Return HTML with meta tags for social media preview
       const metaTags = generateMetaTags({
@@ -289,7 +344,7 @@ app.get('/:alias', async (req, res) => {
         </body>
         </html>
       `;
-      
+
       return res.send(html);
     }
 
@@ -317,11 +372,11 @@ app.get('/api/links/:alias', async (req, res) => {
   try {
     const { alias } = req.params;
     const link = await linkService.getLink(alias);
-    
+
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-    
+
     res.json(link);
   } catch (error) {
     console.error('Error fetching link:', error);
@@ -334,12 +389,12 @@ app.put('/api/links/:alias', async (req, res) => {
   try {
     const { alias } = req.params;
     const updateData = req.body;
-    
+
     const link = await linkService.getLink(alias);
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
     }
-    
+
     // Update logic would go here
     res.json({ message: 'Link updated successfully' });
   } catch (error) {
@@ -399,13 +454,13 @@ app.get('/api/top-links', async (req, res) => {
 app.get('/.well-known/apple-app-site-association', (req, res) => {
   try {
     const aasaData = aasaConfig.loadConfig();
-    
+
     // Set proper headers for AASA file
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    
+
     res.json(aasaData);
   } catch (error) {
     console.error('Error serving AASA file:', error);
@@ -437,10 +492,10 @@ async function start() {
       fs.mkdirSync(dataDir, { recursive: true });
       console.log(`Created data directory: ${dataDir}`);
     }
-    
+
     await db.initialize();
     console.log('Database initialized successfully');
-    
+
     // Initialize and validate AASA configuration
     console.log('Initializing AASA configuration...');
     const aasaData = aasaConfig.loadConfig();
@@ -450,7 +505,7 @@ async function start() {
     } else {
       console.warn('AASA configuration validation failed, using default configuration');
     }
-    
+
     app.listen(PORT, () => {
       console.log(`Mora Shortlink server running on port ${PORT}`);
       console.log(`API available at: http://localhost:${PORT}/api`);
