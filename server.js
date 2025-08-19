@@ -170,20 +170,20 @@ app.get('/ios-redirect.html', (req, res) => {
         
         console.log('Attempting to open app with:', deepLink);
         
-        // Multiple methods to try opening the app
+        // Optimized method for Temenos/banking apps
         function attemptAppOpen() {
-            // Method 1: Direct window.location (most reliable on iOS)
-            try {
-                window.location.href = deepLink;
-            } catch (e) {
-                console.log('Method 1 failed:', e);
-            }
+            console.log('Attempting to open app with deep link:', deepLink);
             
-            // Method 2: Create invisible iframe as backup
+            // Method 1: Direct window.location (most reliable for custom schemes)
+            window.location.href = deepLink;
+            
+            // Method 2: Fallback using iframe (for some iOS versions)
             setTimeout(() => {
                 try {
                     const iframe = document.createElement('iframe');
                     iframe.style.display = 'none';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
                     iframe.src = deepLink;
                     document.body.appendChild(iframe);
                     
@@ -191,23 +191,9 @@ app.get('/ios-redirect.html', (req, res) => {
                         if (document.body.contains(iframe)) {
                             document.body.removeChild(iframe);
                         }
-                    }, 1000);
+                    }, 2000);
                 } catch (e) {
-                    console.log('Method 2 failed:', e);
-                }
-            }, 500);
-            
-            // Method 3: Create a temporary link and click it
-            setTimeout(() => {
-                try {
-                    const link = document.createElement('a');
-                    link.href = deepLink;
-                    link.style.display = 'none';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                } catch (e) {
-                    console.log('Method 3 failed:', e);
+                    console.log('Iframe method failed:', e);
                 }
             }, 1000);
         }
@@ -301,13 +287,31 @@ app.get('/:alias', async (req, res) => {
     const deviceInfo = detectDevice(userAgent);
     let redirectUrl = link.originalUrl;
 
-    // UNIVERSAL LINKS ONLY - NO CUSTOM REDIRECTS
-    // Just redirect to original URL and let iOS handle Universal Links naturally
+    // Platform-specific routing for Temenos-based apps
     console.log(`Device: ${deviceInfo.isIOS ? 'iOS' : deviceInfo.isAndroid ? 'Android' : 'Desktop'}`);
     console.log(`Original URL: ${link.originalUrl}`);
     
-    // Always redirect to original URL - iOS will intercept if app is installed
-    redirectUrl = link.originalUrl;
+    if (deviceInfo.isIOS && link.iosUrl) {
+      // Handle different iOS URL formats
+      if (link.iosUrl.startsWith('morafinance://')) {
+        // Custom scheme for Temenos app - use smart redirect
+        const fallbackUrl = 'https://apps.apple.com/us/app/mora-finance/id6444378741';
+        return res.redirect(`/ios-redirect.html?deeplink=${encodeURIComponent(link.iosUrl)}&fallback=${encodeURIComponent(fallbackUrl)}`);
+      } else if (link.iosUrl.startsWith('https://link.staging.morafinance.com/')) {
+        // Universal Link - redirect to original URL
+        redirectUrl = link.originalUrl;
+      } else {
+        // Direct redirect for other URLs
+        redirectUrl = link.iosUrl;
+      }
+    } else if (deviceInfo.isAndroid && link.androidUrl) {
+      redirectUrl = link.androidUrl;
+    } else if (deviceInfo.isDesktop && link.desktopUrl) {
+      redirectUrl = link.desktopUrl;
+    } else {
+      // Default to original URL
+      redirectUrl = link.originalUrl;
+    }
 
     // Check if this is a social media crawler
     const isCrawler = /bot|crawler|spider|facebook|twitter|linkedin|whatsapp/i.test(userAgent);
