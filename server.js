@@ -165,7 +165,7 @@ app.get('/ios-redirect.html', (req, res) => {
 
     <script>
         // Get URL parameters
-        const deepLink = '${deeplink || 'morafinance://'}';
+        const deepLink = '${deeplink || 'com.moraapp.morainternal://'}';
         const fallbackUrl = '${fallback || 'https://apps.apple.com/us/app/mora-finance/id6444378741'}';
         
         console.log('Attempting to open app with:', deepLink);
@@ -301,24 +301,13 @@ app.get('/:alias', async (req, res) => {
     const deviceInfo = detectDevice(userAgent);
     let redirectUrl = link.originalUrl;
 
-    // Platform-specific routing - SIMPLIFIED FOR UNIVERSAL LINKS
-    if (deviceInfo.isIOS && link.iosUrl) {
-      console.log(`iOS redirect - iOS URL: "${link.iosUrl}"`);
-
-      // For Universal Links, always redirect to original URL to let iOS handle it
-      if (link.iosUrl.startsWith('https://link.staging.morafinance.com/')) {
-        console.log('Universal Link - redirecting to original URL');
-        redirectUrl = link.originalUrl;
-      } else {
-        // Direct redirect for other URLs
-        console.log('Direct iOS redirect');
-        redirectUrl = link.iosUrl;
-      }
-    } else if (deviceInfo.isAndroid && link.androidUrl) {
-      redirectUrl = link.androidUrl;
-    } else if (deviceInfo.isDesktop && link.desktopUrl) {
-      redirectUrl = link.desktopUrl;
-    }
+    // UNIVERSAL LINKS ONLY - NO CUSTOM REDIRECTS
+    // Just redirect to original URL and let iOS handle Universal Links naturally
+    console.log(`Device: ${deviceInfo.isIOS ? 'iOS' : deviceInfo.isAndroid ? 'Android' : 'Desktop'}`);
+    console.log(`Original URL: ${link.originalUrl}`);
+    
+    // Always redirect to original URL - iOS will intercept if app is installed
+    redirectUrl = link.originalUrl;
 
     // Check if this is a social media crawler
     const isCrawler = /bot|crawler|spider|facebook|twitter|linkedin|whatsapp/i.test(userAgent);
