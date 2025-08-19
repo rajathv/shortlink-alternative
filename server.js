@@ -290,7 +290,7 @@ app.get('/:alias', async (req, res) => {
     // Platform-specific routing for Temenos-based apps
     console.log(`Device: ${deviceInfo.isIOS ? 'iOS' : deviceInfo.isAndroid ? 'Android' : 'Desktop'}`);
     console.log(`Original URL: ${link.originalUrl}`);
-    
+
     if (deviceInfo.isIOS && link.iosUrl) {
       // Handle different iOS URL formats
       if (link.iosUrl.startsWith('morafinance://')) {
