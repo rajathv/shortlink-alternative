@@ -19,7 +19,32 @@ const linkService = new LinkService(db);
 const analyticsService = new AnalyticsService(db);
 const aasaConfig = new AASAConfig();
 
-// Middleware
+// Middleware to block website serving for specific domain
+app.use((req, res, next) => {
+  const host = req.get('host');
+  
+  // Block website serving for link.staging.morafinance.com
+  if (host === 'link.staging.morafinance.com') {
+    // Only allow API endpoints and link redirects
+    if (req.path.startsWith('/api/') || 
+        req.path === '/health' || 
+        req.path === '/.well-known/apple-app-site-association' ||
+        req.path === '/ios-redirect.html' ||
+        /^\/[a-zA-Z0-9_-]+$/.test(req.path)) { // Link aliases pattern
+      return next();
+    }
+    
+    // Block all other requests (website serving)
+    return res.status(403).json({ 
+      error: 'Website access not allowed on this domain',
+      message: 'This domain is reserved for URL shortening services only'
+    });
+  }
+  
+  next();
+});
+
+// Standard middleware
 app.use(helmet());
 app.use(cors());
 app.use(morgan('combined'));
@@ -204,7 +229,7 @@ app.get('/ios-redirect.html', (req, res) => {
                 document.getElementById('fallback').style.display = 'block';
                 document.querySelector('.spinner').style.display = 'none';
                 console.log('Showing fallback options');
-            }, 2000); // Reduced from 3000 to 2000ms
+            }, 2000);
         }
         
         // Detect if user left the page (app opened successfully)
@@ -241,7 +266,7 @@ app.get('/ios-redirect.html', (req, res) => {
             } else {
                 console.log('App opened successfully');
             }
-        }, 4000); // Reduced from 5000 to 4000ms
+        }, 4000);
         
         // Add manual fallback button functionality
         setTimeout(() => {
@@ -462,19 +487,46 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
   }
 });
 
-
-
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Static file serving (after specific routes to avoid conflicts)
-app.use(express.static('public'));
+// Static file serving - REMOVED for blocked domain
+// This will prevent serving static files on link.staging.morafinance.com
+// app.use(express.static('public'));
 
-// Root endpoint - serve dashboard
+// Root endpoint - REMOVED for blocked domain
+// This will prevent serving the dashboard on link.staging.morafinance.com
+// app.get('/', (req, res) => {
+//   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// });
+
+// Alternative: Conditional static file serving for other domains
+app.use((req, res, next) => {
+  const host = req.get('host');
+  
+  // Only serve static files and dashboard on non-blocked domains
+  if (host !== 'link.staging.morafinance.com') {
+    express.static('public')(req, res, next);
+  } else {
+    next();
+  }
+});
+
+// Alternative: Conditional root endpoint for other domains
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const host = req.get('host');
+  
+  // Only serve dashboard on non-blocked domains
+  if (host !== 'link.staging.morafinance.com') {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    res.status(403).json({ 
+      error: 'Website access not allowed on this domain',
+      message: 'This domain is reserved for URL shortening services only'
+    });
+  }
 });
 
 // Initialize database and start server
@@ -503,7 +555,10 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`Mora Shortlink server running on port ${PORT}`);
       console.log(`API available at: http://localhost:${PORT}/api`);
+
       console.log(`Short links: https://link.morafinance.com/`);
+      console.log(`Website serving BLOCKED on link.morafinance.com`);
+
     });
   } catch (error) {
     console.error('Failed to start server:', error);
