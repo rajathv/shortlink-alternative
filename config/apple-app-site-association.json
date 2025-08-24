@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["B773LGT82N.com.moraapp.morainternal"],
+        "appIDs": ["B773LGT82N.com.moraapp.MoraFinance"],
         "paths": ["*"],
         "components": [
           {
