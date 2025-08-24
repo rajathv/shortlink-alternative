@@ -47,7 +47,7 @@ app.post('/api/create', async (req, res) => {
     };
 
     const result = await linkService.createLink(linkData);
-    const shortUrl = `https://link.staging.morafinance.com/${result.alias}`;
+    const shortUrl = `https://link.morafinance.com/${result.alias}`;
 
     res.json({
       shortUrl,
@@ -297,7 +297,7 @@ app.get('/:alias', async (req, res) => {
         // Custom scheme for Temenos app - use smart redirect
         const fallbackUrl = 'https://apps.apple.com/us/app/mora-finance/id6444378741';
         return res.redirect(`/ios-redirect.html?deeplink=${encodeURIComponent(link.iosUrl)}&fallback=${encodeURIComponent(fallbackUrl)}`);
-      } else if (link.iosUrl.startsWith('https://link.staging.morafinance.com/')) {
+      } else if (link.iosUrl.startsWith('https://link.morafinance.com/')) {
         // Universal Link - redirect to original URL
         redirectUrl = link.originalUrl;
       } else {
@@ -322,7 +322,7 @@ app.get('/:alias', async (req, res) => {
         title: link.title || 'Mora Finance',
         description: link.description || '',
         imageUrl: link.imageUrl || '',
-        url: `https://link.staging.morafinance.com/${alias}`
+        url: `https://link.morafinance.com/${alias}`
       });
 
       const html = `
@@ -495,7 +495,7 @@ async function start() {
     const aasaData = aasaConfig.loadConfig();
     if (aasaData) {
       console.log('AASA configuration loaded and validated successfully');
-      console.log(`AASA file available at: https://link.staging.morafinance.com/.well-known/apple-app-site-association`);
+      console.log(`AASA file available at: https://link.morafinance.com/.well-known/apple-app-site-association`);
     } else {
       console.warn('AASA configuration validation failed, using default configuration');
     }
@@ -503,7 +503,7 @@ async function start() {
     app.listen(PORT, () => {
       console.log(`Mora Shortlink server running on port ${PORT}`);
       console.log(`API available at: http://localhost:${PORT}/api`);
-      console.log(`Short links: https://link.staging.morafinance.com/`);
+      console.log(`Short links: https://link.morafinance.com/`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

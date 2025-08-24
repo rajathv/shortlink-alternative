@@ -82,7 +82,7 @@ The AASA configuration is stored in `config/apple-app-site-association.json`. Th
 2. **Verify AASA endpoint:**
    ```bash
    curl -H "Accept: application/json" \
-        https://link.staging.morafinance.com/.well-known/apple-app-site-association
+        https://link.morafinance.com/.well-known/apple-app-site-association
    ```
 
 ### Nginx Configuration
@@ -100,12 +100,12 @@ Universal Links require HTTPS in production. Ensure your SSL certificate is prop
 
 1. **Verify SSL certificate:**
    ```bash
-   openssl s_client -connect link.staging.morafinance.com:443 -servername link.staging.morafinance.com
+   openssl s_client -connect link.morafinance.com:443 -servername link.morafinance.com
    ```
 
 2. **Check certificate validity:**
    ```bash
-   curl -I https://link.staging.morafinance.com/.well-known/apple-app-site-association
+   curl -I https://link.morafinance.com/.well-known/apple-app-site-association
    ```
 
 ## Testing and Validation
@@ -118,7 +118,7 @@ Use Apple's official validator to test your AASA file:
    https://search.developer.apple.com/appsearch-validation-tool/
 
 2. **Enter your domain:**
-   `link.staging.morafinance.com`
+   `link.morafinance.com`
 
 3. **Verify the results show your app configuration**
 
@@ -126,7 +126,7 @@ Use Apple's official validator to test your AASA file:
 
 1. **Test AASA endpoint directly:**
    ```bash
-   curl -v https://link.staging.morafinance.com/.well-known/apple-app-site-association
+   curl -v https://link.morafinance.com/.well-known/apple-app-site-association
    ```
 
 2. **Verify response headers:**
@@ -137,7 +137,7 @@ Use Apple's official validator to test your AASA file:
 
 3. **Validate JSON structure:**
    ```bash
-   curl -s https://link.staging.morafinance.com/.well-known/apple-app-site-association | jq .
+   curl -s https://link.morafinance.com/.well-known/apple-app-site-association | jq .
    ```
 
 ### iOS Device Testing
@@ -153,12 +153,12 @@ If Universal Links aren't working:
 
 1. **Check AASA file accessibility:**
    ```bash
-   curl -I https://link.staging.morafinance.com/.well-known/apple-app-site-association
+   curl -I https://link.morafinance.com/.well-known/apple-app-site-association
    ```
 
 2. **Verify app configuration in Xcode:**
    - Associated Domains capability is enabled
-   - Domain is added: `applinks:link.staging.morafinance.com`
+   - Domain is added: `applinks:link.morafinance.com`
 
 3. **Check iOS device logs:**
    - Connect device to Xcode
@@ -214,7 +214,7 @@ Monitor AASA endpoint performance:
 ```bash
 # Test response time
 curl -w "@curl-format.txt" -o /dev/null -s \
-  https://link.staging.morafinance.com/.well-known/apple-app-site-association
+  https://link.morafinance.com/.well-known/apple-app-site-association
 ```
 
 Create `curl-format.txt`:
@@ -261,7 +261,7 @@ Create `curl-format.txt`:
 
 2. **Add Domain:**
    ```
-   applinks:link.staging.morafinance.com
+   applinks:link.morafinance.com
    ```
 
 3. **Handle Universal Links in code:**
@@ -286,7 +286,7 @@ Create `curl-format.txt`:
 For development testing, you can use HTTP (though production requires HTTPS):
 
 ```
-applinks:link.staging.morafinance.com
+applinks:link.morafinance.com
 ```
 
 The nginx configuration serves AASA files on both HTTP and HTTPS for development flexibility.
